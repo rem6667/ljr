@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 完整移动端适配标签 -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>爱心窗口+随机弹窗双阶段</title>
+  <style>
+    /* 全局重置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #111;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 窗口容器：自适应宽度 */
+    .win-box {
+      width: min(300px, 80vw);
+      height: min(100px, 25vh);
+      background: rgba(30,30,40,0.85);
+      border: 1px solid #ff6699;
+      border-radius: 8px;
+      position: fixed;
+      box-shadow: 0 0 20px #ff447755;
+      overflow: hidden;
+    }
+
+    /* 窗口标题栏 */
+    .win-title {
+      height: 36px;
+      background: #ff4477;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      cursor: move;
+    }
+    .win-title-text {
+      color: #fff;
+      font-size: clamp(10px, 2vw, 14px);
+    }
+    .win-close {
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      color: white;
+      background: #ff2255;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .win-close:hover {
+      background: #ff0033;
+    }
+
+    /* 窗口内容区域 */
+    .win-content {
+      width: 100%;
+      height: calc(100% - 36px);
+      overflow: hidden;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+// 全局配置
+let winCount = 0;
+let isHeartStage = true;
+let timer = null;
+const maxHeartWin = 100;
+
+// 100条祝福文案
+const blessList = [
+    "天天都开心",
+"干啥都顺顺利利",
+"平平安安开开心心",
+"疯狂变美疯狂暴富",
+"好运一直围着你转",
+"每一年都没烦心事",
+"以后前途一片光亮",
+"赚超多超多钱",
+"烦心事通通变少",
+"财运滚滚不停歇",
+"别总熬大夜啦",
+"身子健健康康的",
+"所有事都合心意",
+"福气满满绕身边",
+"心里想的全都实现",
+"每天都有小欢喜",
+"往后道路全是光亮",
+"存款蹭蹭往上涨",
+"不用发愁没烦恼",
+"年年平安不出事",
+"怎么吃都不长肉",
+"每晚睡得超踏实",
+"糟心事全部消失",
+"身边总遇好心人",
+"好运直接拉满",
+"工作事业节节升",
+"日子过得软软乎乎",
+"眼睛永远亮晶晶",
+"心里一直装着热爱",
+"走哪条路都不坎坷",
+"存款直接翻倍涨",
+"身上一点压力没有",
+"每一天都乐呵呵",
+"一生平安顺顺当当",
+"长久安稳欢喜度日",
+"想要的全都到手",
+"出门干啥都顺畅",
+"有钱又活得舒服",
+"怎么开心怎么来",
+"好运一波接一波",
+"一日三餐都暖心",
+"一年四季不用发愁",
+"以后一切都值得期待",
+"好运气主动找上门",
+"天天咧嘴笑不停",
+"再也不用胡思乱想",
+"活得轻松又自由",
+"赚钱路子源源不断",
+"身体没啥小毛病",
+"每天过得舒心快活",
+"大胆往前冲就完事",
+"永远向着阳光生活",
+"有钱花还没烦心事",
+"平安时时刻刻相伴",
+"每天过得轻松快乐",
+"小日子闪闪发光",
+"啥事儿都不用操心",
+"生活里全是小惊喜",
+"干啥都合自己心意",
+"年年都有开心事",
+"钱多活儿少超舒服",
+"每晚睡觉安稳香甜",
+"无病痛无灾无难",
+"做什么事都顺风顺水",
+"好运直接翻一倍",
+"生活甜滋滋的",
+"以后的日子大有盼头",
+"钱财源源不断进兜",
+"快乐直接拉满格",
+"所有烦恼一键清空",
+"未来发展大有前途",
+"每一年身体都硬朗",
+"时不时就有小惊喜",
+"大大小小事都圆满",
+"一生平安福气多多",
+"活得自在不受拘束",
+"好运走到哪跟到哪",
+"每天都有开心小事",
+"走到哪里都有好运",
+"做什么事都大吉大利",
+"浑身舒坦无不适感",
+"疯狂暴富不停歇",
+"快乐能维持好久",
+"年年都过得舒心",
+"好运永远不中断",
+"温柔和温暖常伴身旁",
+"未来道路耀眼夺目",
+"钱财一直进钱包",
+"每天无忧无虑过日子",
+"欢喜时时刻刻存在",
+"所有事情完美收尾",
+"好运长久不离开",
+"平安开心常伴左右",
+"有钱赚还有人偏爱",
+"大大小小事都顺心"
+];
+
+// 随机柔和配色
+function getRandomColor() {
+  const colorList = [
+    '#ff6699','#ff5555','#ffbb66','#88ddff','#bb88ff','#77eeaa','#ffdd77','#ff88bb','#66ccff','#ff7777'
+  ];
+  return colorList[Math.floor(Math.random() * colorList.length)];
+}
+
+// 随机祝福
+function getRandomBless() {
+    return blessList[Math.floor(Math.random() * blessList.length)];
+}
+
+// 爱心参数方程
+function getHeartPoint(t) {
+  const x = 16 * Math.pow(Math.sin(t), 3);
+  const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+  return { x, y };
+}
+
+// 创建窗口公共函数
+function createNewWindow() {
+  if(isHeartStage && winCount >= maxHeartWin){
+    clearInterval(timer);
+    document.querySelectorAll('.win-box').forEach(item=>item.remove());
+    winCount = 0;
+    isHeartStage = false;
+    setTimeout(()=>{
+      timer = setInterval(createNewWindow,50);
+    },500)
+    return;
+  }
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const winW = Math.min(300, w * 0.8);
+  const winH = Math.min(100, h * 0.25);
+  let randomLeft, randomTop;
+
+  if(isHeartStage){
+    // 分设备缩小爱心，电脑、手机都完整容纳
+    let heartScale;
+    if(w < 768){
+      // 手机更小爱心
+      heartScale = w / 22;
+    }else{
+      // 电脑缩小爱心，不会溢出屏幕
+      heartScale = w / 60;
+    }
+    // 垂直居中微调，防止上下跑出屏幕
+    const centerX = w / 2;
+    const centerY = h / 2 - h * 0.02;
+    const t = (winCount / maxHeartWin) * Math.PI * 2;
+    const point = getHeartPoint(t);
+    randomLeft = centerX + point.x * heartScale;
+    randomTop = centerY - point.y * heartScale;
+  }else{
+    // 第二阶段随机弹窗带安全边距
+    const safeLeft = Math.random() * (w - winW - 20) + 10;
+    const safeTop = Math.random() * (h - winH - 60) + 40;
+    randomLeft = safeLeft;
+    randomTop = safeTop;
+  }
+
+  const mainColor = getRandomColor();
+  const blessText = getRandomBless();
+
+  const win = document.createElement('div');
+  win.className = 'win-box';
+  win.style.left = randomLeft + 'px';
+  win.style.top = randomTop + 'px';
+  win.style.borderColor = mainColor;
+  win.style.boxShadow = `0 0 20px ${mainColor}55`;
+
+  win.innerHTML = `
+    <div class="win-title" style="background:${mainColor}">
+      <span class="win-title-text">ljr是笨蛋</span>
+      <button class="win-close">×</button>
+    </div>
+    <div class="win-content" style="color:${mainColor};display:flex;align-items:center;justify-content:center;font-size:clamp(11px,2.2vw,16px);font-weight:bold;text-align:center;padding:4px;">
+      ${blessText}
+    </div>
+  `;
+
+  const dragBar = win.querySelector('.win-title');
+  const closeBtn = win.querySelector('.win-close');
+
+  // 关闭窗口
+  closeBtn.onclick = function () {
+    win.remove();
+    winCount--;
+  }
+
+  // 拖拽逻辑
+  let isDrag = false;
+  let offsetX, offsetY;
+  dragBar.addEventListener('mousedown', function (e) {
+    isDrag = true;
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
+    e.preventDefault();
+  })
+
+  document.addEventListener('mousemove', function (e) {
+    if (!isDrag) return;
+    win.style.left = (e.clientX - offsetX) + 'px';
+    win.style.top = (e.clientY - offsetY) + 'px';
+  })
+
+  document.addEventListener('mouseup', function () {
+    isDrag = false;
+  })
+
+  document.body.appendChild(win);
+  winCount++;
+}
+
+timer = setInterval(createNewWindow, 50);
+</script>
+
+</body>
+</html>
