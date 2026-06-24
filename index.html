@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <!-- 完整移动端适配标签 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ljr是笨蛋</title>
   <style>
-    /* 全局重置 */
     * {
       margin: 0;
       padding: 0;
@@ -19,52 +17,51 @@
       overflow: hidden;
     }
 
-    /* 窗口容器：手机小尺寸，电脑宽松 */
+    /* 手机极致小窗口，电脑保持原尺寸 */
     .win-box {
-      width: min(150px, 80vw);
-      height: min(70px, 20vh);
+      width: min(120px, 72vw);
+      height: min(60px, 16vh);
       background: rgba(30,30,40,0.85);
       border: 1px solid #ff6699;
-      border-radius: 8px;
+      border-radius: 6px;
       position: fixed;
-      box-shadow: 0 0 20px #ff447755;
+      box-shadow: 0 0 16px #ff447755;
       overflow: hidden;
     }
 
-    /* 标题栏高度30，同步修改内容高度计算 */
     .win-title {
-      height: 30px;
+      height: 24px;
       background: #ff4477;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
+      padding: 0 6px;
       cursor: move;
     }
     .win-title-text {
       color: #fff;
-      font-size: clamp(9px, 2vw, 13px);
+      font-size: clamp(8px, 1.8vw, 12px);
     }
     .win-close {
-      width: 20px;
-      height: 20px;
-      line-height: 20px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
       text-align: center;
       color: white;
       background: #ff2255;
       border: none;
-      border-radius: 4px;
+      border-radius: 3px;
       cursor: pointer;
-      font-size:14px;
+      font-size: 12px;
     }
     .win-close:hover {
       background: #ff0033;
     }
 
-    /* 内容高度对应标题30px，修正之前36px错误，减少空白 */
+    /* 标题24px，高度计算同步，消除空白 */
     .win-content {
       width: 100%;
-      height: calc(100% - 30px);
+      height: calc(100% - 24px);
       overflow: hidden;
       position: relative;
     }
@@ -73,13 +70,11 @@
 <body>
 
 <script>
-// 全局配置
 let winCount = 0;
 let isHeartStage = true;
 let timer = null;
 const maxHeartWin = 100;
 
-// 100条祝福文案
 const blessList = [
     "天天都开心",
 "干啥都顺顺利利",
@@ -178,7 +173,6 @@ const blessList = [
 "大大小小事都顺心"
 ];
 
-// 随机柔和配色
 function getRandomColor() {
   const colorList = [
     '#ff6699','#ff5555','#ffbb66','#88ddff','#bb88ff','#77eeaa','#ffdd77','#ff88bb','#66ccff','#ff7777'
@@ -186,19 +180,16 @@ function getRandomColor() {
   return colorList[Math.floor(Math.random() * colorList.length)];
 }
 
-// 随机祝福
 function getRandomBless() {
     return blessList[Math.floor(Math.random() * blessList.length)];
 }
 
-// 爱心参数方程
 function getHeartPoint(t) {
   const x = 16 * Math.pow(Math.sin(t), 3);
   const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
   return { x, y };
 }
 
-// 创建窗口公共函数
 function createNewWindow() {
   if(isHeartStage && winCount >= maxHeartWin){
     clearInterval(timer);
@@ -213,29 +204,26 @@ function createNewWindow() {
 
   const w = window.innerWidth;
   const h = window.innerHeight;
-  // 【关键修复】删除JS里写死的300/100尺寸，完全交给CSS控制，不再冲突
   let randomLeft, randomTop;
 
   if(isHeartStage){
-    // 手机爱心放大，解决爱心过小问题
+    // 手机爱心极端放大 w/30，比之前大非常多
     let heartScale;
     if(w < 768){
-      // 手机放大爱心，从w/63改成w/45，更大更清晰
-      heartScale = w / 45;
+      heartScale = w / 30;
     }else{
-      // 电脑保持原有大小不变
       heartScale = w / 60;
     }
     const centerX = w / 2;
-    const centerY = h / 2 - h * 0.02;
+    const centerY = h / 2;
     const t = (winCount / maxHeartWin) * Math.PI * 2;
     const point = getHeartPoint(t);
     randomLeft = centerX + point.x * heartScale;
     randomTop = centerY - point.y * heartScale;
   }else{
-    // 第二阶段全屏随机，允许半截窗口
-    const safeLeft = Math.random() * w;
-    const safeTop = Math.random() * h;
+    // 全屏随机，允许大量窗口半边在屏幕外
+    const safeLeft = Math.random() * w - 60;
+    const safeTop = Math.random() * h - 30;
     randomLeft = safeLeft;
     randomTop = safeTop;
   }
@@ -248,14 +236,15 @@ function createNewWindow() {
   win.style.left = randomLeft + 'px';
   win.style.top = randomTop + 'px';
   win.style.borderColor = mainColor;
-  win.style.boxShadow = `0 0 20px ${mainColor}55`;
+  win.style.boxShadow = `0 0 16px ${mainColor}55`;
 
+  // 文字无左右padding，字体相对屏幕更大
   win.innerHTML = `
     <div class="win-title" style="background:${mainColor}">
       <span class="win-title-text">ljr是笨蛋</span>
       <button class="win-close">×</button>
     </div>
-    <div class="win-content" style="color:${mainColor};display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2.4vw,15px);font-weight:bold;text-align:center;padding:2px 4px;">
+    <div class="win-content" style="color:${mainColor};display:flex;align-items:center;justify-content:center;font-size:clamp(10px,3vw,14px);font-weight:bold;text-align:center;padding:0 2px;">
       ${blessText}
     </div>
   `;
@@ -263,13 +252,12 @@ function createNewWindow() {
   const dragBar = win.querySelector('.win-title');
   const closeBtn = win.querySelector('.win-close');
 
-  // 关闭窗口
   closeBtn.onclick = function () {
     win.remove();
     winCount--;
   }
 
-  // 拖拽逻辑（兼容手机触摸+电脑鼠标）
+  // 触摸+鼠标拖拽兼容
   let isDrag = false;
   let offsetX, offsetY;
   function startDrag(e) {
