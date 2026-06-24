@@ -19,10 +19,10 @@
       overflow: hidden;
     }
 
-    /* 窗口容器：自适应宽度 */
+    /* 窗口容器：自适应宽度 修复缺失px数值 */
     .win-box {
-      width: min(px, 80vw);
-      height: min(px, 25vh);
+      width: min(300px, 80vw);
+      height: min(100px, 25vh);
       background: rgba(30,30,40,0.85);
       border: 1px solid #ff6699;
       border-radius: 8px;
@@ -31,9 +31,9 @@
       overflow: hidden;
     }
 
-    /* 窗口标题栏 */
+    /* 窗口标题栏 修复高度缺失 */
     .win-title {
-      height: px;
+      height: 36px;
       background: #ff4477;
       display: flex;
       align-items: center;
@@ -234,9 +234,9 @@ function createNewWindow() {
     randomLeft = centerX + point.x * heartScale;
     randomTop = centerY - point.y * heartScale;
   }else{
-    // 第二阶段随机弹窗带安全边距
-    const safeLeft = Math.random() * (w - winW - 20) + 10;
-    const safeTop = Math.random() * (h - winH - 60) + 40;
+    // ========== 修改核心：取消所有安全边距，全屏随机，允许窗口一半跑出屏幕 ==========
+    const safeLeft = Math.random() * w - winW * 0.5;
+    const safeTop = Math.random() * h - winH * 0.5;
     randomLeft = safeLeft;
     randomTop = safeTop;
   }
@@ -270,25 +270,33 @@ function createNewWindow() {
     winCount--;
   }
 
-  // 拖拽逻辑
+  // 拖拽逻辑（兼容手机触摸+电脑鼠标）
   let isDrag = false;
   let offsetX, offsetY;
-  dragBar.addEventListener('mousedown', function (e) {
+  function startDrag(e) {
     isDrag = true;
-    offsetX = e.clientX - win.offsetLeft;
-    offsetY = e.clientY - win.offsetTop;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    offsetX = clientX - win.offsetLeft;
+    offsetY = clientY - win.offsetTop;
     e.preventDefault();
-  })
-
-  document.addEventListener('mousemove', function (e) {
+  }
+  function moveDrag(e) {
     if (!isDrag) return;
-    win.style.left = (e.clientX - offsetX) + 'px';
-    win.style.top = (e.clientY - offsetY) + 'px';
-  })
-
-  document.addEventListener('mouseup', function () {
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    win.style.left = (clientX - offsetX) + 'px';
+    win.style.top = (clientY - offsetY) + 'px';
+  }
+  function endDrag() {
     isDrag = false;
-  })
+  }
+  dragBar.addEventListener('mousedown', startDrag)
+  dragBar.addEventListener('touchstart', startDrag)
+  document.addEventListener('mousemove', moveDrag)
+  document.addEventListener('touchmove', moveDrag)
+  document.addEventListener('mouseup', endDrag)
+  document.addEventListener('touchend', endDrag)
 
   document.body.appendChild(win);
   winCount++;
